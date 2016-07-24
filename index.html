@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8' />
+    <title></title>
+    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+    <script src='https://api.mapbox.com/mapbox-gl-js/v0.21.0/mapbox-gl.js'></script>
+    <script src='//s3.amazonaws.com/assets-staging.mapzen.com/ui/components/bug/bug.min.js'></script>
+    <link href='https://api.mapbox.com/mapbox-gl-js/v0.21.0/mapbox-gl.css' rel='stylesheet' />
+    <style>
+        html {
+            font-family: Helvetica, Arial, sans-serif;
+        }
+        body { margin:0; padding:0; }
+        #map { position:absolute; top:0; bottom:0; width:100%; }
+        #legend {
+          position: absolute; top:0; left: 0; margin: 16px; background-color: #f5f5f5;
+          border-radius: 4px; width: 180px;
+        }
+        #legend {
+        z-index: 9999;
+        padding: 6px 8px;
+        background: white;
+        background: rgba(255,255,255,0.8);
+        box-shadow: 0 0 15px rgba(0,0,0,0.2);
+        border-radius: 5px;
+      }
+      #legend h4 { margin: 0 0 5px; color: #777; }
+      #legend { text-align: left; line-height: 18px; color: #555; }
+      #legend i { width: 18px; height: 18px; float: left; margin-right: 8px; opacity: 0.7; }
+    </style>
+</head>
+<body>
+  <div id="legend">
+    <h4>Most rated:</h4>
+    <i style="background:#542788"></i> Yes (1 tap)<br>
+    <i style="background:#fdb863"></i> Maybe (2 taps)<br>
+    <i style="background:#525252"></i> Bad imagery (3 taps)<br>
+  </div>
+
+<div id='map'></div>
+<script>
+
+mapboxgl.accessToken = 'NOT-REQUIRED-WITH-YOUR-VECTOR-TILES-DATA';
+
+var map = new mapboxgl.Map({
+    container: 'map',
+    style: 'simple.json',
+    center: [2.5, 8.2],
+    zoom: 2,
+    hash: true
+});
+
+map.on('load', function () {
+    map.addSource('results', {
+        "type": "vector",
+        "tiles": ["https://americanredcross.github.io/mapswipe-tiles/"+"results/{z}/{x}/{y}.pbf"],
+        "maxzoom": 18
+    });
+    map.addLayer({
+        "id": "one",
+        "type": "fill",
+        "source": "results",
+        "filter": ["==","category", "one"],
+        "source-layer": "results",
+
+        "paint": {
+            "fill-color": "#542788",
+            "fill-opacity": 0.7
+        }
+    });
+    map.addLayer({
+        "id": "two",
+        "type": "fill",
+        "source": "results",
+        "filter": ["==","category", "two"],
+        "source-layer": "results",
+        "paint": {
+            "fill-color": "#fdb863",
+            "fill-opacity": 0.7
+        }
+    });
+    map.addLayer({
+        "id": "three",
+        "type": "fill",
+        "source": "results",
+        "filter": ["==","category", "three"],
+        "source-layer": "results",
+        "paint": {
+            "fill-color": "#525252",
+            "fill-opacity": 0.7
+        }
+    });
+});
+
+// When a click event occurs near a polygon, open a popup at the location of
+// the feature, with description HTML from its properties.
+map.on('click', function (e) {
+    var features = map.queryRenderedFeatures(e.point, { layers: ['one', 'two', 'three'] });
+    if (!features.length) { return; }
+
+    var feature = features[0];
+    var content = '<b><u>total: ' + feature.properties.total + '</b></u><br>' +
+      'one: ' + feature.properties.one + '<br>' +
+      'two: ' + feature.properties.two + '<br>' +
+      'three: ' + feature.properties.three;
+
+    var popup = new mapboxgl.Popup()
+        .setLngLat(map.unproject(e.point))
+        .setHTML(content)
+        .addTo(map);
+});
+
+// Use the same approach as above to indicate that the symbols are clickable
+// by changing the cursor style to 'pointer'.
+map.on('mousemove', function (e) {
+    var features = map.queryRenderedFeatures(e.point, { layers: ['one', 'two', 'three'] });
+    map.getCanvas().style.cursor = (features.length) ? 'pointer' : '';
+});
+
+map.addControl(new mapboxgl.Navigation());
+
+</script>
+</body>
+</html>
